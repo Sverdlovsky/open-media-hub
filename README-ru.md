@@ -1,4 +1,4 @@
-<p style="text-align:center"><a href=https://github.com/Sverdlovsky/open-media-hub/README.md>English</a> | <a href=https://github.com/Sverdlovsky/open-media-hub/README.ru.md>Русский</a></p>
+[English](https://github.com/Sverdlovsky/open-media-hub/blob/main/README.md) | [Русский](https://github.com/Sverdlovsky/open-media-hub/blob/main/README-ru.md)
 
 # Open Media Hub
 

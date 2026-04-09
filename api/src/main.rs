@@ -158,7 +158,7 @@ async fn main() -> anyhow::Result<()> {
         .route("/result", post(submit_answer))
         .layer(Extension(Arc::new(state)));
 
-    let addr = SocketAddr::from(([0, 0, 0, 0], 3000));
+    let addr = SocketAddr::from(([0, 0, 0, 0], 8080));
 
     let listener = TcpListener::bind(addr).await?;
 

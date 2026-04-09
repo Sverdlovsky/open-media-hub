@@ -16,7 +16,6 @@ app.add_middleware(SessionMiddleware, secret_key=config('SECRET_KEY'))
 config('JWT_SECRET')
 
 oauth = OAuth(config)
-if os.getenv('GOOGLE_CLIENT_ID', None) and os.getenv('GOOGLE_CLIENT_SECRET', None)
 
 YANDEX_CLIENT_ID = config("YANDEX_CLIENT_ID", default=None)
 YANDEX_CLIENT_SECRET = config("YANDEX_CLIENT_SECRET", default=None)

@@ -30,8 +30,8 @@ jobs:
         context: ./web
         push: true
         platforms: linux/amd64
-        cache-from: type=registry,ref=ghcr.io/sverdlovsky/core-edu-web:latest
-        cache-to: type=registry,ref=ghcr.io/sverdlovsky/core-edu-web:latest,mode=max
+        cache-from: type=registry,ref=ghcr.io/sverdlovsky/core-edu-web:cache
+        cache-to: type=registry,ref=ghcr.io/sverdlovsky/core-edu-web:cache,mode=max
         tags: |
           ghcr.io/sverdlovsky/core-edu-web:latest
           ghcr.io/sverdlovsky/core-edu-web:0.2.0

@@ -30,8 +30,8 @@ jobs:
         context: ./auth
         push: true
         platforms: linux/amd64
-        cache-from: type=registry,ref=ghcr.io/sverdlovsky/core-edu-auth:latest
-        cache-to: type=registry,ref=ghcr.io/sverdlovsky/core-edu-auth:latest,mode=max
+        cache-from: type=registry,ref=ghcr.io/sverdlovsky/core-edu-auth:cache
+        cache-to: type=registry,ref=ghcr.io/sverdlovsky/core-edu-auth:cache,mode=max
         tags: |
           ghcr.io/sverdlovsky/core-edu-auth:latest
           ghcr.io/sverdlovsky/core-edu-auth:0.2.0

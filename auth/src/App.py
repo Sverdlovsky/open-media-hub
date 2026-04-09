@@ -30,8 +30,8 @@ if YANDEX_CLIENT_ID and YANDEX_CLIENT_SECRET:
         client_kwargs={'scope': 'login:email login:info'},
     )
 
-GOOGLE_CLIENT_ID = config("YANDEX_CLIENT_ID", default=None)
-GOOGLE_CLIENT_SECRET = config("YANDEX_CLIENT_SECRET", default=None)
+GOOGLE_CLIENT_ID = config("GOOGLE_CLIENT_ID", default=None)
+GOOGLE_CLIENT_SECRET = config("GOOGLE_CLIENT_SECRET", default=None)
 if GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET:
     oauth.register(
         name='google',
@@ -41,8 +41,8 @@ if GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET:
         client_kwargs={'scope': 'openid email profile'},
     )
 
-GITHUB_CLIENT_ID = config("YANDEX_CLIENT_ID", default=None)
-GITHUB_CLIENT_SECRET = config("YANDEX_CLIENT_SECRET", default=None)
+GITHUB_CLIENT_ID = config("GITHUB_CLIENT_ID", default=None)
+GITHUB_CLIENT_SECRET = config("GITHUB_CLIENT_SECRET", default=None)
 if GITHUB_CLIENT_ID and GITHUB_CLIENT_SECRET:
     oauth.register(
         name='github',

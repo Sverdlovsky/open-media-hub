@@ -9,8 +9,14 @@ RUN apk add \
 
 WORKDIR /srv/api
 
-COPY Cargo.lock .
+RUN cargo init
+
 COPY Cargo.toml .
+COPY Cargo.lock .
+
+RUN cargo build --release
+
+RUN rm -r src
 COPY src src
 
 RUN cargo build --release

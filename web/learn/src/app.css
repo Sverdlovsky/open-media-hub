@@ -2,8 +2,8 @@ body {
     height: 100vh;
     display: flex;
     flex-direction: column;
+    align: center;
     background-color: #000000;
     color: white;
-    padding: 0px 512px;
     margin: 0px;
 }

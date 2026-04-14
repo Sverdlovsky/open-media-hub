@@ -2,13 +2,13 @@ use anyhow::{Context, Result};
 use axum::{
     Extension, Router,
     extract::{Path, Query},
-    http::StatusCode,
-    response::{
-        IntoResponse,
-        Redirect,
-        Response,
-        Json,
+    http::{
+        header,
+        HeaderValue,
+        StatusCode,
+        Method
     },
+    response::{IntoResponse, Json},
     routing::{get, post},
     serve,
 };
@@ -18,15 +18,11 @@ use std::{
     net::SocketAddr,
     time::Duration,
     sync::Arc,
-    fs::File,
     env,
 };
 use tokio::net::TcpListener;
-use sqlx::{
-    postgres::PgPoolOptions,
-    Postgres,
-    Pool,
-};
+use tower_http::cors::{CorsLayer};
+use sqlx::{postgres::PgPoolOptions};
 use num_cpus;
 use jsonwebtoken::{
     Algorithm,
@@ -49,17 +45,14 @@ pub struct Claims {
 }
 
 pub struct Auth {
-    callback: String,
     decoding_key: DecodingKey,
 }
 
 impl Auth {
     pub fn new() -> anyhow::Result<Self> {
         let jwt_secret = env::var("JWT_SECRET").context("Environment variable JWT_SECRET not set!")?;
-        let domain = env::var("DOMAIN").context("Environment variable DOMAIN not set!")?;
 
         Ok(Self {
-            callback: format!("https://auth.{}/with/yandex", domain),
             decoding_key: DecodingKey::from_secret(jwt_secret.as_bytes()),
         })
     }
@@ -78,30 +71,6 @@ impl Auth {
             Err(err) => match *err.kind() {
                 ErrorKind::ExpiredSignature => return Err(AuthError::ExpiredToken),
                 _ => return Err(AuthError::InvalidToken),
-            },
-        };
-
-        Ok(token_data.claims.sub)
-    }
-
-    pub fn force_validate(&self, jar: &CookieJar) -> Result<String, Response> {
-        let token = match jar.get("access_token") {
-            Some(c) => c.value().to_string(),
-            None => {
-                return Err(Redirect::temporary(&self.callback).into_response());
-            }
-        };
-
-        let mut validation = Validation::new(Algorithm::HS256);
-        validation.validate_exp = true;
-
-        let token_data = match decode::<Claims>(&token, &self.decoding_key, &validation) {
-            Ok(data) => data,
-            Err(err) => match *err.kind() {
-                ErrorKind::ExpiredSignature => {
-                    return Err(Redirect::temporary(&self.callback).into_response());
-                }
-                _ => return Err(Redirect::temporary(&self.callback).into_response()),
             },
         };
 
@@ -129,7 +98,7 @@ struct LearnQueryParams {
 
 #[derive(Deserialize)]
 struct SubmitResultQueryParams {
-    wordId: i64,
+    wid: i64,
     time: f32,
 }
 
@@ -150,13 +119,23 @@ async fn main() -> anyhow::Result<()> {
         auth: Arc::new(Auth::new()?),
     };
 
+    let cors = CorsLayer::new()
+        .allow_origin([
+            "https://zenime.su".parse::<HeaderValue>().unwrap(),
+            "https://learn.zenime.su".parse::<HeaderValue>().unwrap(),
+        ])
+        .allow_credentials(true)
+        .allow_methods([Method::GET, Method::POST])
+        .allow_headers([header::CONTENT_TYPE]);
+
     let app = Router::new()
         .route("/series", get(series))
         .route("/packs", get(packs))
         .route("/info/{filename}", get(series_info))
         .route("/word", get(next_word))
         .route("/result", post(submit_answer))
-        .layer(Extension(Arc::new(state)));
+        .layer(Extension(Arc::new(state)))
+        .layer(cors);
 
     let addr = SocketAddr::from(([0, 0, 0, 0], 8080));
 
@@ -245,7 +224,12 @@ async fn next_word(
     Extension(state): Extension<Arc<AppState>>,
     Query(params): Query<LearnQueryParams>,
 ) -> impl IntoResponse {
-    let email = state.auth.force_validate(&jar).ok();
+    let email = match state.auth.validate(&jar) {
+        Ok(email) => email,
+        Err(_) => {
+            return (StatusCode::UNAUTHORIZED).into_response();
+        }
+    };
 
     let row: (serde_json::Value,) = match sqlx::query_as("SELECT next_word($1);")
         //.bind(&params.source)
@@ -268,20 +252,27 @@ async fn submit_answer(
     Extension(state): Extension<Arc<AppState>>,
     Json(payload): Json<SubmitResultQueryParams>,
 ) -> impl IntoResponse {
-    let email = state.auth.force_validate(&jar).ok();
+    let email = match state.auth.validate(&jar) {
+        Ok(email) => email,
+        Err(_) => {
+            return (StatusCode::UNAUTHORIZED).into_response();
+        }
+    };
 
-    match sqlx::query("SELECT submit_answer($1, $2, $3);")
+    let row: (serde_json::Value,) = match sqlx::query_as("SELECT submit_answer($1, $2, $3);")
         .bind(&email)
-        .bind(payload.wordId)
+        .bind(payload.wid)
         .bind(payload.time)
-        .execute(&state.db)
+        .fetch_one(&state.db)
         .await
     {
-        Ok(_) => StatusCode::OK.into_response(),
+        Ok(r) => r,
         Err(e) => {
             eprintln!("DB error: {}", e);
-            (StatusCode::INTERNAL_SERVER_ERROR, "db error").into_response()
+            return (StatusCode::INTERNAL_SERVER_ERROR, "db error").into_response();
         }
-    }
+    };
+
+    (StatusCode::OK, Json(row.0)).into_response()
 }
 

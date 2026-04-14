@@ -11,7 +11,7 @@ RUN adduser -DH -u 31541 -G user user
 RUN chown -R user:user .
 USER user
 
-EXPOSE 8000
+EXPOSE 8008
 
-ENTRYPOINT [ "fastapi", "run", "/app/src/App.py", "--port", "8000", "--proxy-headers", "--forwarded-allow-ips", "*" ]
+ENTRYPOINT [ "fastapi", "run", "/app/src/App.py", "--port", "8008", "--proxy-headers", "--forwarded-allow-ips", "*" ]
 

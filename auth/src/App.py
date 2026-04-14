@@ -116,7 +116,7 @@ async def auth(request: Request, provider: str):
         httponly=True,
         domain='.' + config('DOMAIN'),
         secure=True,
-        samesite='lax'
+        samesite="none"
     )
     return response
 

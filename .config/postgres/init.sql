@@ -303,26 +303,21 @@ BEGIN
 
       1.0 / sqrt(wp.attempts + 1) as uncertainty,
 
-      ln(wp.attempts_since_last + 1) as neglect,
+      ln(wp.attempts_since_last + 1) as neglect
 
-      CASE 
-        WHEN wp.mastery <= 0 OR wp.mastery >= 1 THEN 0
-        ELSE -wp.mastery * ln(wp.mastery) - (1 - wp.mastery) * ln(1 - wp.mastery)
-      END AS entropy
     FROM word_progress wp
     --JOIN words w ON w.id = wp.word_id
     WHERE wp.user_id = v_user_id
   ),
 
   selected AS (
-    SELECT word_id
+    SELECT word_id, mastery
     FROM stats
     ORDER BY
       --difficulty
-      (1 - mastery)
-      * entropy
-      * uncertainty
-      * neglect DESC
+      10.0 * (1 - mastery) +
+      1.0 * uncertainty +
+      1.0 * neglect DESC
     LIMIT p_limit
   ),
 
@@ -352,7 +347,8 @@ BEGIN
     'word', jsonb_build_object(
       'id', w.id,
       'text', w.word,
-      'extra', w.extra
+      'extra', w.extra,
+      'mastery', s1.mastery
     ),
 
     'example', jsonb_build_object(
@@ -376,23 +372,26 @@ $$ LANGUAGE plpgsql STABLE;
 CREATE OR REPLACE FUNCTION submit_answer(
   p_email TEXT,
   p_word_id BIGINT,
-  p_response_time REAL
+  p_response_time DOUBLE PRECISION
 )
-RETURNS VOID AS $$
+RETURNS JSONB AS $$
 DECLARE
   v_user_id BIGINT;
-  v_score REAL;
+  v_x DOUBLE PRECISION;
+  v_score DOUBLE PRECISION;
+  v_next JSONB;
 BEGIN
   SELECT id INTO v_user_id FROM users WHERE email = p_email;
 
-  v_score := 1.1*(1/(1+EXP(p_response_time)/EXP(2.5))); -- Sigmoid + Abjustment
+  v_x := LEAST(GREATEST(p_response_time, 0), 10);
+  v_score := 1.1/(1+EXP(v_x - 2.5)); -- Sigmoid + Abjustment
 
   INSERT INTO Answers(uid, wid, score) VALUES (v_user_id, p_word_id, v_score);
 
   UPDATE word_progress
   SET
     attempts = attempts + 1,
-    attempts_since_last = -1,
+    attempts_since_last = 0,
 
     confidence = confidence + 0.1 * (1 - confidence),
 
@@ -405,8 +404,12 @@ BEGIN
   WHERE user_id = v_user_id AND word_id <> p_word_id;
 
   PERFORM add_next_word(v_user_id);
+
+  v_next := next_word(p_email, 1);
+
+  RETURN v_next;
 END;
-$$ LANGUAGE plpgsql STABLE;
+$$ LANGUAGE plpgsql VOLATILE;
 
 CREATE MATERIALIZED VIEW word_frequency AS
 SELECT wid, COUNT(*) as freq
@@ -425,7 +428,7 @@ BEGIN
   FROM word_progress
   WHERE user_id = v_user_id;
 
-  IF v_avg_mastery IS NULL OR v_avg_mastery <= 0.8 THEN
+  IF v_avg_mastery IS NULL OR v_avg_mastery <= 0.6 THEN
     RETURN;
   END IF;
 
@@ -446,5 +449,5 @@ BEGIN
   END IF;
 
 END;
-$$ LANGUAGE plpgsql;
+$$ LANGUAGE plpgsql VOLATILE;
 

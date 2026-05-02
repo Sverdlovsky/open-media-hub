@@ -1,14 +1,14 @@
 apiVersion: v1
 kind: PersistentVolume
 metadata:
-  name: coredu
+  name: omh
   labels:
     type: local
-    app: coredu
+    app: omh
 spec:
   storageClassName: manual
   hostPath:
-    path: "/var/lib/rancher/k3s/storage/coredu"
+    path: "/var/lib/rancher/k3s/storage/omh"
   accessModes:
     - ReadWriteOnce
   capacity:
@@ -17,9 +17,9 @@ spec:
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
-  name: coredu
+  name: omh
   labels:
-    app: coredu
+    app: omh
 spec:
   storageClassName: manual
   accessModes:
@@ -31,16 +31,16 @@ spec:
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: coredu
+  name: omh
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: coredu
+      app: omh
   template:
     metadata:
       labels:
-        app: coredu
+        app: omh
     spec:
       tolerations:
       - key: "node-role.kubernetes.io/control-plane"
@@ -71,7 +71,7 @@ spec:
         - name: ADMIN_EMAIL
           value: #########
         - name: DATABASE_URL
-          value: postgresql://coredu:coredu_pass@postgres:5432/coredu
+          value: postgresql://omh:omh_pass@postgres:5432/omh
         - name: JWT_SECRET
           value: ########
       - name: auth
@@ -101,18 +101,18 @@ spec:
       volumes:
       - name: series
         persistentVolumeClaim:
-          claimName: coredu
+          claimName: omh
 ---
 apiVersion: v1
 kind: Service
 metadata:
-  name: coredu
+  name: omh
   labels:
-    app: coredu
+    app: omh
 spec:
   type: ClusterIP
   selector:
-    app: coredu
+    app: omh
   ports:
     - name: http
       port: 80
@@ -130,7 +130,7 @@ spec:
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
-  name: coredu
+  name: omh
   annotations:
     ingressClassName: traefik
     traefik.ingress.kubernetes.io/router.entrypoints: websecure
@@ -139,7 +139,6 @@ spec:
   tls:
   - hosts:
     - example.com
-    - learn.example.com
     - media.example.com
     - auth.example.com
     - api.example.com
@@ -151,7 +150,7 @@ spec:
         pathType: Prefix
         backend:
           service:
-            name: coredu-root
+            name: omh-root
             port:
               name: http
 
@@ -162,7 +161,7 @@ spec:
         pathType: Prefix
         backend:
           service:
-            name: coredu-learn
+            name: omh-learn
             port:
               name: http
 
@@ -173,7 +172,7 @@ spec:
         pathType: Prefix
         backend:
           service:
-            name: coredu-media
+            name: omh-media
             port:
               name: http
 
@@ -184,7 +183,7 @@ spec:
         pathType: Prefix
         backend:
           service:
-            name: coredu-auth
+            name: omh-auth
             port:
               name: auth
 
@@ -195,7 +194,7 @@ spec:
         pathType: Prefix
         backend:
           service:
-            name: coredu-api
+            name: omh-api
             port:
               name: api
 

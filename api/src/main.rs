@@ -91,21 +91,11 @@ struct SeriesQueryParams {
     search: Option<String>,
 }
 
-#[derive(Deserialize)]
-struct LearnQueryParams {
-    source: Option<String>,
-}
-
-#[derive(Deserialize)]
-struct SubmitResultQueryParams {
-    wid: i64,
-    time: f32,
-}
-
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
     tracing_subscriber::fmt::init();
 
+    let domain = env::var("DOMAIN").context("Environment variable DOMAIN is not set!")?;
     let dsn = env::var("DATABASE_URL").context("Environment variable DATABASE_URL not set!")?;
     let pool = PgPoolOptions::new()
         .max_connections(num_cpus::get() as u32 * 2)
@@ -121,8 +111,7 @@ async fn main() -> anyhow::Result<()> {
 
     let cors = CorsLayer::new()
         .allow_origin([
-            "https://zenime.su".parse::<HeaderValue>().unwrap(),
-            "https://learn.zenime.su".parse::<HeaderValue>().unwrap(),
+            format!("https://{}", domain).parse::<HeaderValue>().unwrap(),
         ])
         .allow_credentials(true)
         .allow_methods([Method::GET, Method::POST])
@@ -132,8 +121,6 @@ async fn main() -> anyhow::Result<()> {
         .route("/series", get(series))
         .route("/packs", get(packs))
         .route("/info/{filename}", get(series_info))
-        .route("/word", get(next_word))
-        .route("/result", post(submit_answer))
         .layer(Extension(Arc::new(state)))
         .layer(cors);
 
@@ -215,63 +202,6 @@ async fn series_info(
                 return (StatusCode::INTERNAL_SERVER_ERROR, "db error").into_response();
             }
         };
-
-    (StatusCode::OK, Json(row.0)).into_response()
-}
-
-async fn next_word(
-    jar: CookieJar,
-    Extension(state): Extension<Arc<AppState>>,
-    Query(params): Query<LearnQueryParams>,
-) -> impl IntoResponse {
-    let email = match state.auth.validate(&jar) {
-        Ok(email) => email,
-        Err(_) => {
-            return (StatusCode::UNAUTHORIZED).into_response();
-        }
-    };
-
-    let row: (serde_json::Value,) = match sqlx::query_as("SELECT next_word($1);")
-        //.bind(&params.source)
-        .bind(&email)
-        .fetch_one(&state.db)
-        .await
-    {
-        Ok(r) => r,
-        Err(e) => {
-            eprintln!("DB error: {}", e);
-            return (StatusCode::INTERNAL_SERVER_ERROR, "db error").into_response();
-        }
-    };
-
-    (StatusCode::OK, Json(row.0)).into_response()
-}
-
-async fn submit_answer(
-    jar: CookieJar,
-    Extension(state): Extension<Arc<AppState>>,
-    Json(payload): Json<SubmitResultQueryParams>,
-) -> impl IntoResponse {
-    let email = match state.auth.validate(&jar) {
-        Ok(email) => email,
-        Err(_) => {
-            return (StatusCode::UNAUTHORIZED).into_response();
-        }
-    };
-
-    let row: (serde_json::Value,) = match sqlx::query_as("SELECT submit_answer($1, $2, $3);")
-        .bind(&email)
-        .bind(payload.wid)
-        .bind(payload.time)
-        .fetch_one(&state.db)
-        .await
-    {
-        Ok(r) => r,
-        Err(e) => {
-            eprintln!("DB error: {}", e);
-            return (StatusCode::INTERNAL_SERVER_ERROR, "db error").into_response();
-        }
-    };
 
     (StatusCode::OK, Json(row.0)).into_response()
 }

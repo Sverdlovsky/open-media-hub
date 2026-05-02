@@ -1,4 +1,4 @@
-name: Core Edu - API Server
+name: Open Media Hub - API Server
 
 on:
   push:
@@ -30,9 +30,9 @@ jobs:
         context: ./api
         push: true
         platforms: linux/amd64
-        cache-from: type=registry,ref=ghcr.io/sverdlovsky/core-edu-api:cache
-        cache-to: type=registry,ref=ghcr.io/sverdlovsky/core-edu-api:cache,mode=max
+        cache-from: type=registry,ref=ghcr.io/sverdlovsky/open-media-hub-api:cache
+        cache-to: type=registry,ref=ghcr.io/sverdlovsky/open-media-hub-api:cache,mode=max
         tags: |
-          ghcr.io/sverdlovsky/core-edu-api:latest
-          ghcr.io/sverdlovsky/core-edu-api:0.2.2
+          ghcr.io/sverdlovsky/open-media-hub-api:latest
+          ghcr.io/sverdlovsky/open-media-hub-api:0.3.0
 

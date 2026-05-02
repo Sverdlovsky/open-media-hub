@@ -1,4 +1,4 @@
-name: Core Edu - API Server (Dev branch)
+name: Open Media Hub - API Server (Dev branch)
 
 on:
   push:
@@ -18,8 +18,8 @@ jobs:
       run: echo "${{ secrets.GITHUB_TOKEN }}" | podman login ghcr.io -u ${{ github.actor }} --password-stdin
 
     - name: Build image
-      run: podman build -t ghcr.io/sverdlovsky/core-edu-api:dev api
+      run: podman build -t ghcr.io/sverdlovsky/open-media-hub-api:dev api
 
     - name: Push image
-      run: podman push ghcr.io/sverdlovsky/core-edu-api:dev
+      run: podman push ghcr.io/sverdlovsky/open-media-hub-api:dev
 

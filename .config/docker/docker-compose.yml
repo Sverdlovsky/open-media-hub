@@ -53,7 +53,7 @@ services:
     environment:
       DOMAIN: ####
       ADMIN_EMAIL: #########
-      DATABASE_URL: postgresql://coredu:coredu_password@postgres:5432/coredu
+      DATABASE_URL: postgresql://omh:omh_password@postgres:5432/omh
       JWT_SECRET: ########
 
   auth:

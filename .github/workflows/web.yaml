@@ -1,4 +1,4 @@
-name: Core Edu - Web Server
+name: Open Media Hub - Web Server
 
 on:
   push:
@@ -30,9 +30,9 @@ jobs:
         context: ./web
         push: true
         platforms: linux/amd64
-        cache-from: type=registry,ref=ghcr.io/sverdlovsky/core-edu-web:cache
-        cache-to: type=registry,ref=ghcr.io/sverdlovsky/core-edu-web:cache,mode=max
+        cache-from: type=registry,ref=ghcr.io/sverdlovsky/open-media-hub-web:cache
+        cache-to: type=registry,ref=ghcr.io/sverdlovsky/open-media-hub-web:cache,mode=max
         tags: |
-          ghcr.io/sverdlovsky/core-edu-web:latest
-          ghcr.io/sverdlovsky/core-edu-web:0.2.2
+          ghcr.io/sverdlovsky/open-media-hub-web:latest
+          ghcr.io/sverdlovsky/open-media-hub-web:0.3.0
 

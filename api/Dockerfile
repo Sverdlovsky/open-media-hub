@@ -16,7 +16,7 @@ COPY Cargo.lock .
 
 RUN cargo build --release
 
-RUN cargo clean -rp coredu
+RUN cargo clean -rp omh
 
 RUN rm -rf src
 COPY src src
@@ -26,7 +26,7 @@ RUN cargo build --release
 
 FROM docker.io/library/alpine:3.23
 
-COPY --from=build /srv/api/target/release/coredu /usr/bin/coredu
+COPY --from=build /srv/api/target/release/omh /usr/bin/omh
 
 RUN addgroup -g 31541 user
 RUN adduser -DH -u 31541 -G user user
@@ -34,5 +34,5 @@ USER user
 
 EXPOSE 8080
 
-ENTRYPOINT [ "/usr/bin/coredu" ]
+ENTRYPOINT [ "/usr/bin/omh" ]
 

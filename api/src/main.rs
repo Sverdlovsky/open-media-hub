@@ -118,6 +118,8 @@ async fn main() -> anyhow::Result<()> {
         .allow_headers([header::CONTENT_TYPE]);
 
     let app = Router::new()
+        .route("/health", get(health))
+        .route("/ready", get(ready))
         .route("/series", get(series))
         .route("/packs", get(packs))
         .route("/info/{filename}", get(series_info))
@@ -131,6 +133,14 @@ async fn main() -> anyhow::Result<()> {
     serve(listener, app.into_make_service()).await?;
 
     Ok(())
+}
+
+async fn health() -> StatusCode {
+    StatusCode::OK
+}
+
+async fn ready() -> StatusCode {
+    StatusCode::OK
 }
 
 async fn series(
